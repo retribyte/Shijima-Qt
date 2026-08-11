@@ -107,6 +107,20 @@ bool ShijimaWidget::isMirroredRender() const {
         m_mascot->get_state()->looking_right;
 }
 
+// Sprites are authored at one fixed size, so they are almost always resampled:
+// a fractional desktop scale is enough on its own, and the mascot scale setting
+// resamples too. Qt defaults to nearest-neighbour, which at 1.5x doubles some
+// source pixels and not others -- very visible on anti-aliased mascot art, and
+// the reason the default here is smooth. Pixel-art mascots want the opposite,
+// hence the override.
+static bool smoothScalingEnabled() {
+    static const bool enabled = []{
+        auto filter = qgetenv("SHIJIMA_SCALE_FILTER").toLower();
+        return filter != "nearest" && filter != "none" && filter != "0";
+    }();
+    return enabled;
+}
+
 void ShijimaWidget::paintEvent(QPaintEvent *event) {
     if (!m_visible) {
         return;
@@ -115,6 +129,8 @@ void ShijimaWidget::paintEvent(QPaintEvent *event) {
     auto &image = asset.image(isMirroredRender());
     auto scaledSize = image.size() / m_drawScale;
     QPainter painter(this);
+    painter.setRenderHint(QPainter::SmoothPixmapTransform,
+        smoothScalingEnabled());
     painter.drawImage(QRect { m_drawOrigin, scaledSize }, image);
 #ifdef __linux__
     if (Platform::useWindowMasks()) {
