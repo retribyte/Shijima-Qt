@@ -71,6 +71,10 @@
 
 using namespace shijima;
 
+// Deliberately not a subgroup of the app-wide "smoothScaling" key: QSettings
+// leaves the behaviour undefined when a key is also a group.
+static const QString scalingFilterGroup = "mascotScalingFilter";
+
 static QString colorToString(QColor const &color) { return color.name(QColor::HexRgb); }
 
 static ShijimaManager *m_defaultManager = nullptr;
@@ -447,6 +451,14 @@ void ShijimaManager::buildToolbar() {
             ShijimaWidget::setSmoothScaling(m_settings.value(key,
                 QVariant::fromValue(ShijimaWidget::smoothScaling())).toBool());
 
+            // Restore the per-mascot overrides set from mascot context menus.
+            m_settings.beginGroup(scalingFilterGroup);
+            for (auto const& mascotName : m_settings.childKeys()) {
+                ShijimaWidget::setSmoothScalingFor(mascotName,
+                    m_settings.value(mascotName).toBool());
+            }
+            m_settings.endGroup();
+
             QAction *smoothAction = submenu->addAction("Smooth");
             QAction *nearestAction = submenu->addAction("Nearest");
             auto syncChecks = [smoothAction, nearestAction]() {
@@ -524,6 +536,26 @@ void ShijimaManager::buildTrayIcon() {
             }
         });
     m_trayIcon->show();
+}
+
+void ShijimaManager::setScalingFilterFor(QString const& mascotName,
+    std::optional<bool> smooth)
+{
+    ShijimaWidget::setSmoothScalingFor(mascotName, smooth);
+    QString key = scalingFilterGroup + "/" + mascotName;
+    if (smooth.has_value()) {
+        m_settings.setValue(key, QVariant::fromValue<bool>(*smooth));
+    }
+    else {
+        m_settings.remove(key);
+    }
+    // Frames are only redrawn when they change, so mascots already on screen
+    // need telling. Only this mascot's own instances are affected.
+    for (auto mascot : m_mascots) {
+        if (mascot->mascotName() == mascotName) {
+            mascot->update();
+        }
+    }
 }
 
 void ShijimaManager::refreshListWidget() {

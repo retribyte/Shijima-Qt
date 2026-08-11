@@ -33,6 +33,7 @@
 #include <set>
 #include <list>
 #include <mutex>
+#include <optional>
 #include "Platform/ActiveWindowObserver.hpp"
 #include "ShijimaWidget.hpp"
 #include "ShijimaHttpApi.hpp"
@@ -60,6 +61,11 @@ public:
     void killAllButOne(ShijimaWidget *widget);
     void killAllButOne(QString const& name);
     void setManagerVisible(bool visible);
+    /// @brief Pins one mascot's scaling filter, or passes nullopt to hand it
+    ///        back to the app-wide setting. Persists the choice and repaints
+    ///        the mascots already on screen.
+    void setScalingFilterFor(QString const& mascotName,
+        std::optional<bool> smooth);
     void importOnShow(QString const& path);
     QMap<QString, MascotData *> const& loadedMascots();
     QMap<int, MascotData *> const& loadedMascotsById();

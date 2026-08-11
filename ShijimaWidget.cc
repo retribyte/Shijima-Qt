@@ -19,6 +19,7 @@
 #include "ShijimaWidget.hpp"
 #include <QWidget>
 #include <QPainter>
+#include <QHash>
 #include <QFile>
 #include <QDir>
 #include <QScreen>
@@ -120,12 +121,41 @@ static bool g_smoothScaling = []{
     return filter != "nearest" && filter != "none" && filter != "0";
 }();
 
+// Which filter is right depends on the art rather than on the machine, so a
+// mascot can pin its own and ignore the app-wide default. Keyed on mascot name
+// and not on the widget: a pixel-art mascot wants hard edges every time it is
+// spawned, not only for the instance that happened to be told so.
+static QHash<QString, bool> g_smoothScalingByMascot;
+
 bool ShijimaWidget::smoothScaling() {
     return g_smoothScaling;
 }
 
 void ShijimaWidget::setSmoothScaling(bool smooth) {
     g_smoothScaling = smooth;
+}
+
+std::optional<bool> ShijimaWidget::smoothScalingFor(QString const& mascotName) {
+    auto entry = g_smoothScalingByMascot.constFind(mascotName);
+    if (entry == g_smoothScalingByMascot.constEnd()) {
+        return std::nullopt;
+    }
+    return *entry;
+}
+
+void ShijimaWidget::setSmoothScalingFor(QString const& mascotName,
+    std::optional<bool> smooth)
+{
+    if (smooth.has_value()) {
+        g_smoothScalingByMascot.insert(mascotName, *smooth);
+    }
+    else {
+        g_smoothScalingByMascot.remove(mascotName);
+    }
+}
+
+bool ShijimaWidget::effectiveSmoothScaling() const {
+    return smoothScalingFor(m_data->name()).value_or(g_smoothScaling);
 }
 
 void ShijimaWidget::paintEvent(QPaintEvent *event) {
@@ -136,7 +166,8 @@ void ShijimaWidget::paintEvent(QPaintEvent *event) {
     auto &image = asset.image(isMirroredRender());
     auto scaledSize = image.size() / m_drawScale;
     QPainter painter(this);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform, smoothScaling());
+    painter.setRenderHint(QPainter::SmoothPixmapTransform,
+        effectiveSmoothScaling());
     painter.drawImage(QRect { m_drawOrigin, scaledSize }, image);
 #ifdef __linux__
     if (Platform::useWindowMasks()) {

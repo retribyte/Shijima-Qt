@@ -20,6 +20,7 @@
 
 #include <QWidget>
 #include <memory>
+#include <optional>
 #include <QRegion>
 #include "Asset.hpp"
 #include "SoundEffectManager.hpp"
@@ -40,9 +41,18 @@ class ShijimaWidget : public PlatformWidget<QWidget>
 public:
     friend class ShijimaContextMenu;
     /// @brief Whether sprites are resampled smoothly instead of by
-    ///        nearest-neighbour. Applies to every mascot.
+    ///        nearest-neighbour. Applies to every mascot without an override.
     static bool smoothScaling();
     static void setSmoothScaling(bool smooth);
+    /// @brief One mascot's own filter, or nullopt to follow smoothScaling().
+    ///        Keyed on mascot name rather than on the widget: which filter is
+    ///        right is a property of the art, so it holds for every instance.
+    ///        Set through ShijimaManager, which also persists it.
+    static std::optional<bool> smoothScalingFor(QString const& mascotName);
+    static void setSmoothScalingFor(QString const& mascotName,
+        std::optional<bool> smooth);
+    /// @brief The filter this mascot actually renders with.
+    bool effectiveSmoothScaling() const;
     explicit ShijimaWidget(MascotData *mascotData,
         std::unique_ptr<shijima::mascot::manager> mascot,
         int mascotId, bool windowedMode, QWidget *parent = nullptr);

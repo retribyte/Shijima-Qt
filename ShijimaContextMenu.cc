@@ -66,6 +66,32 @@ ShijimaContextMenu::ShijimaContextMenu(ShijimaWidget *parent)
         shijimaParent()->m_paused = checked;
     });
 
+    // Scaling filter
+    {
+        auto submenu = addMenu("Scaling filter");
+        QString mascotName = parent->mascotName();
+        auto current = ShijimaWidget::smoothScalingFor(mascotName);
+
+        #define addFilter(text, value) do { \
+            action = submenu->addAction(text); \
+            action->setCheckable(true); \
+            action->setChecked(current == std::optional<bool> { value }); \
+            connect(action, &QAction::triggered, [mascotName]() { \
+                ShijimaManager::defaultManager() \
+                    ->setScalingFilterFor(mascotName, value); \
+            }); \
+        } while (0)
+
+        // The default is worth naming: it is the one entry whose meaning
+        // changes when the app-wide setting does.
+        addFilter(ShijimaWidget::smoothScaling() ? "Default (smooth)"
+            : "Default (nearest)", std::nullopt);
+        addFilter("Smooth", true);
+        addFilter("Nearest", false);
+
+        #undef addFilter
+    }
+
     // Call another
     action = addAction("Call another");
     connect(action, &QAction::triggered, [this](){
