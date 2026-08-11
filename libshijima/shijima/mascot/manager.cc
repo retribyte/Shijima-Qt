@@ -72,7 +72,12 @@ void manager::reset_position() {
     auto &screen = state->env->screen;
     if (screen.width() >= 100 && screen.height() >= 100) {
         double new_x = screen.left + 50 + state->env->random((int)screen.width() - 50);
-        double new_y = screen.top + 50 + state->env->random((int)screen.width() - 50);
+        // height(), not width(): drawing Y from the screen's WIDTH puts the anchor below
+        // the bottom of any landscape screen most of the time -- 45% of spawns on a
+        // 1920x1080 one. Down there the only surface is the underside of the work area,
+        // which the border tests read as a ceiling, so a freshly spawned mascot crawls
+        // along underneath the taskbar upside down.
+        double new_y = screen.top + 50 + state->env->random((int)screen.height() - 50);
         state->anchor = { new_x, new_y };
     }
     else {
