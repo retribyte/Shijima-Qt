@@ -113,12 +113,19 @@ bool ShijimaWidget::isMirroredRender() const {
 // source pixels and not others -- very visible on anti-aliased mascot art, and
 // the reason the default here is smooth. Pixel-art mascots want the opposite,
 // hence the override.
-static bool smoothScalingEnabled() {
-    static const bool enabled = []{
-        auto filter = qgetenv("SHIJIMA_SCALE_FILTER").toLower();
-        return filter != "nearest" && filter != "none" && filter != "0";
-    }();
-    return enabled;
+// SHIJIMA_SCALE_FILTER only seeds the value: it is the default the settings
+// menu starts from, and picking a filter there overrides it from then on.
+static bool g_smoothScaling = []{
+    auto filter = qgetenv("SHIJIMA_SCALE_FILTER").toLower();
+    return filter != "nearest" && filter != "none" && filter != "0";
+}();
+
+bool ShijimaWidget::smoothScaling() {
+    return g_smoothScaling;
+}
+
+void ShijimaWidget::setSmoothScaling(bool smooth) {
+    g_smoothScaling = smooth;
 }
 
 void ShijimaWidget::paintEvent(QPaintEvent *event) {
@@ -129,8 +136,7 @@ void ShijimaWidget::paintEvent(QPaintEvent *event) {
     auto &image = asset.image(isMirroredRender());
     auto scaledSize = image.size() / m_drawScale;
     QPainter painter(this);
-    painter.setRenderHint(QPainter::SmoothPixmapTransform,
-        smoothScalingEnabled());
+    painter.setRenderHint(QPainter::SmoothPixmapTransform, smoothScaling());
     painter.drawImage(QRect { m_drawOrigin, scaledSize }, image);
 #ifdef __linux__
     if (Platform::useWindowMasks()) {

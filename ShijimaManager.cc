@@ -438,6 +438,43 @@ void ShijimaManager::buildToolbar() {
                 m_settings.setValue(key, QVariant::fromValue(m_userScale));
             });
         }
+
+        submenu = menu->addMenu("Scaling filter");
+        {
+            static const QString key = "smoothScaling";
+            // Seeded from SHIJIMA_SCALE_FILTER so the environment variable
+            // still decides the default, but a saved choice outranks it.
+            ShijimaWidget::setSmoothScaling(m_settings.value(key,
+                QVariant::fromValue(ShijimaWidget::smoothScaling())).toBool());
+
+            QAction *smoothAction = submenu->addAction("Smooth");
+            QAction *nearestAction = submenu->addAction("Nearest");
+            auto syncChecks = [smoothAction, nearestAction]() {
+                smoothAction->setChecked(ShijimaWidget::smoothScaling());
+                nearestAction->setChecked(!ShijimaWidget::smoothScaling());
+            };
+            for (auto entry : { smoothAction, nearestAction }) {
+                entry->setCheckable(true);
+            }
+            syncChecks();
+
+            #define addFilter(entry, smooth) \
+                connect(entry, &QAction::triggered, [this, syncChecks]() { \
+                    ShijimaWidget::setSmoothScaling(smooth); \
+                    m_settings.setValue(key, QVariant::fromValue<bool>(smooth)); \
+                    syncChecks(); \
+                    /* Frames are only redrawn when they change, so already \
+                       visible mascots need telling. */ \
+                    for (auto mascot : m_mascots) { \
+                        mascot->update(); \
+                    } \
+                })
+
+            addFilter(smoothAction, true);
+            addFilter(nearestAction, false);
+
+            #undef addFilter
+        }
     }
 
     menu = menuBar()->addMenu("Help");

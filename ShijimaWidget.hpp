@@ -39,6 +39,10 @@ class ShijimaWidget : public PlatformWidget<QWidget>
 {
 public:
     friend class ShijimaContextMenu;
+    /// @brief Whether sprites are resampled smoothly instead of by
+    ///        nearest-neighbour. Applies to every mascot.
+    static bool smoothScaling();
+    static void setSmoothScaling(bool smooth);
     explicit ShijimaWidget(MascotData *mascotData,
         std::unique_ptr<shijima::mascot::manager> mascot,
         int mascotId, bool windowedMode, QWidget *parent = nullptr);
