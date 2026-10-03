@@ -329,6 +329,32 @@ void ShijimaManager::buildToolbar() {
         }
 
         {
+            static const QString key = "spanDisplays";
+            m_spanDisplays = m_settings.value(key, QVariant::fromValue(true)).toBool();
+
+            action = menu->addAction("Span all displays");
+            action->setCheckable(true);
+            action->setChecked(m_spanDisplays);
+            connect(action, &QAction::triggered, [this](bool checked){
+                m_spanDisplays = checked;
+                m_settings.setValue(key, QVariant::fromValue(checked));
+                if (windowedMode()) {
+                    return;
+                }
+                // Re-home every mascot: the shared environment when spanning, otherwise the screen it stands on
+                for (auto mascot : m_mascots) {
+                    auto &anchor = mascot->mascot().get_state()->anchor;
+                    auto screen = checked ? QGuiApplication::primaryScreen()
+                        : QGuiApplication::screenAt(QPoint { (int)anchor.x, (int)anchor.y });
+                    if (screen == nullptr) {
+                        screen = QGuiApplication::primaryScreen();
+                    }
+                    mascot->setEnv(m_env[screen]);
+                }
+            });
+        }
+
+        {
             action = menu->addAction("Windowed mode");
             m_windowedModeAction = action;
             action->setCheckable(true);
@@ -916,6 +942,12 @@ void ShijimaManager::updateEnvironment(QScreen *screen) {
         cursor = QCursor::pos();
         geometry = screen->geometry();
         available = screen->availableGeometry();
+        if (m_spanDisplays) {
+            for (auto other : QGuiApplication::screens()) {
+                geometry = geometry.united(other->geometry());
+                available = available.united(other->availableGeometry());
+            }
+        }
     }
     int taskbarHeight = available.bottom() - geometry.bottom();
     if (taskbarHeight < 0) {
@@ -1120,7 +1152,7 @@ void ShijimaManager::tick() {
         shimeji->tick();
         auto &mascot = shimeji->mascot();
         auto &breedRequest = mascot.get_state()->breed_request;
-        if (mascot.get_state()->dragging && !windowedMode()) {
+        if (mascot.get_state()->dragging && !windowedMode() && !m_spanDisplays) {
             auto oldScreen = m_reverseEnv[mascot.get_state()->env.get()];
             auto newScreen = QGuiApplication::screenAt(QPoint {
                 (int)mascot.get_state()->anchor.x, (int)mascot.get_state()->anchor.y });
@@ -1185,7 +1217,7 @@ QScreen *ShijimaManager::mascotScreen() {
         screen = nullptr;
     }
     else {
-        screen = this->screen();
+        screen = m_spanDisplays ? nullptr : this->screen();
         if (screen == nullptr) {
             screen = qApp->primaryScreen();
         }

@@ -133,6 +133,8 @@ private:
     bool m_wasVisible = false;
     // User sent the manager window to the tray: it must stay hidden even with zero mascots
     bool m_trayHidden = false;
+    // One shared environment spanning every display, so mascots can walk from one monitor to the next
+    bool m_spanDisplays = true;
     int m_idCounter;
     double m_userScale = 1.0;
     int m_windowObserverTimer = -1;
