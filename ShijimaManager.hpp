@@ -74,6 +74,7 @@ public:
     ShijimaWidget *hitTest(QPoint const& screenPos);
     void onTickSync(std::function<void(ShijimaManager *)> callback);
     void revealManager();
+    void startInTray();
     ~ShijimaManager() override;
 
 signals:
@@ -104,6 +105,8 @@ private:
     void refreshListWidget();
     void buildToolbar();
     void buildTrayIcon();
+    bool trayUsable() const;
+    void hideToTray();
     void importAction();
     void deleteAction();
     void updateSandboxBackground();
@@ -128,6 +131,8 @@ private:
     bool m_allowClose = false;
     bool m_firstShow = true;
     bool m_wasVisible = false;
+    // User sent the manager window to the tray: it must stay hidden even with zero mascots
+    bool m_trayHidden = false;
     int m_idCounter;
     double m_userScale = 1.0;
     int m_windowObserverTimer = -1;

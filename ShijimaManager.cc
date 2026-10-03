@@ -509,7 +509,34 @@ void ShijimaManager::buildToolbar() {
     }
 }
 
+bool ShijimaManager::trayUsable() const {
+    return m_trayIcon != nullptr && QSystemTrayIcon::isSystemTrayAvailable();
+}
+
+// With no mascots there is nothing to parent, so the window can really be hidden. Mascots are
+// children of the manager window, so with any mascot out it must stay "shown" but tucked away
+// (setManagerVisible(false) shrinks it and moves it off-screen).
+void ShijimaManager::hideToTray() {
+    m_trayHidden = true;
+    if (m_mascots.empty()) {
+        hide();
+    }
+    else {
+        setManagerVisible(false);
+    }
+}
+
+void ShijimaManager::startInTray() {
+    if (trayUsable()) {
+        m_trayHidden = true;
+    }
+    else {
+        show();
+    }
+}
+
 void ShijimaManager::revealManager() {
+    m_trayHidden = false;
     setManagerVisible(true);
     show();
     raise();
@@ -523,6 +550,12 @@ void ShijimaManager::buildTrayIcon() {
     auto menu = new QMenu { this };
     auto showAction = menu->addAction("Show Shijima Manager");
     connect(showAction, &QAction::triggered, this, &ShijimaManager::revealManager);
+    auto trayQuit = menu->addAction("Quit Shijima-Qt");
+    connect(trayQuit, &QAction::triggered, this, [this]() {
+        quitAction();
+        // The manager may be hidden (nothing visible to close), so quit explicitly
+        QCoreApplication::quit();
+    });
 
     m_trayIcon = new QSystemTrayIcon { icon, this };
     m_trayIcon->setToolTip("Shijima-Qt");
@@ -649,7 +682,7 @@ void ShijimaManager::showEvent(QShowEvent *event) {
         importWithDialog({ path });
     }
     else {
-        if (m_loadedMascots.size() == 1) {
+        if (m_loadedMascots.size() == 1 && !m_trayHidden) {
             auto msgBox = new MessageBox("Welcome to Shijima! Get started by dragging and dropping a "
                                          "shimeji archive to the manager window. You can also import archives "
                                          "by selecting File > Import.",
@@ -832,6 +865,11 @@ void ShijimaManager::itemDoubleClicked(QListWidgetItem *qItem) {
 
 void ShijimaManager::closeEvent(QCloseEvent *event)
 {
+    if (!m_allowClose && trayUsable()) {
+        event->ignore();
+        hideToTray();
+        return;
+    }
     if (!canClose()) {
         event->ignore();
         setManagerVisible(false);
@@ -1029,6 +1067,23 @@ void ShijimaManager::tick() {
     }
 
     #if !defined(__APPLE__)
+    if (m_trayHidden && !windowedMode()) {
+        if (m_mascots.empty()) {
+            if (isVisible()) {
+                hide();
+            }
+            return;
+        }
+        if (!isVisible()) {
+            // Mascots are children of this window, so it has to be shown once one exists. Tuck it off-screen.
+            show();
+            m_wasVisible = true;
+            setManagerVisible(false);
+        }
+    }
+    #endif
+
+    #if !defined(__APPLE__)
     if (isMinimized()) {
         setWindowState(windowState() & ~Qt::WindowMinimized);
         setManagerVisible(!m_wasVisible);
@@ -1107,7 +1162,7 @@ void ShijimaManager::tick() {
         env->reset_scale();
     }
 
-    if (m_mascots.size() == 0 && !windowedMode()) {
+    if (m_mascots.size() == 0 && !windowedMode() && !m_trayHidden) {
         // All mascots self-destructed, show manager
         setManagerVisible(true);
     }

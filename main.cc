@@ -16,6 +16,7 @@
 // along with this program.  If not, see <https://www.gnu.org/licenses/>.
 // 
 
+#include <string>
 #include <QApplication>
 #include <QDir>
 #include <QStandardPaths>
@@ -32,6 +33,12 @@
 #endif
 
 int main(int argc, char **argv) {
+    // "--tray": start with the manager window hidden in the system tray (any other argument means CLI mode)
+    bool startInTray = false;
+    if (argc == 2 && std::string { argv[1] } == "--tray") {
+        startInTray = true;
+        argc = 1;
+    }
     if (argc > 1) {
         return shijimaRunCli(argc, argv);
     }
@@ -50,7 +57,12 @@ int main(int argc, char **argv) {
         if (pingResult != nullptr) {
             throw std::runtime_error("Shijima-Qt is already running!");
         }
-        ShijimaManager::defaultManager()->show();
+        if (startInTray) {
+            ShijimaManager::defaultManager()->startInTray();
+        }
+        else {
+            ShijimaManager::defaultManager()->show();
+        }
     }
     catch (std::exception &ex) {
         auto msgBox = new MessageBox(QString("Shijima-Qt failed to start. Reason: %1").arg(ex.what()),
