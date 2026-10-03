@@ -807,8 +807,11 @@ ShijimaManager::ShijimaManager(QWidget *parent):
     if (m_windowObserver.tickFrequency() > 0) {
         m_windowObserverTimer = startTimer(m_windowObserver.tickFrequency());
     }
-    setWindowFlags((windowFlags() | Qt::CustomizeWindowHint | Qt::ExpandedClientAreaHint)
-                   & ~Qt::WindowMaximizeButtonHint & ~Qt::WindowMinimizeButtonHint);
+    auto managerFlags = windowFlags() | Qt::CustomizeWindowHint;
+    #if QT_VERSION >= QT_VERSION_CHECK(6, 9, 0)
+    managerFlags |= Qt::ExpandedClientAreaHint;
+    #endif
+    setWindowFlags(managerFlags & ~Qt::WindowMaximizeButtonHint & ~Qt::WindowMinimizeButtonHint);
     setManagerVisible(true);
 
     connect(&m_listWidget, &QListWidget::itemDoubleClicked,
