@@ -22,6 +22,9 @@
 #include "KWin.hpp"
 #include "KDEWindowObserverBackend.hpp"
 #include "GNOMEWindowObserverBackend.hpp"
+#include "Cinnamon.hpp"
+#include "CinnamonWindowObserverBackend.hpp"
+#include "ExtensionFile.hpp"
 #include "Platform-Linux.hpp"
 #include <QProcessEnvironment>
 #include <QDBusConnection>
@@ -60,6 +63,11 @@ PrivateActiveWindowObserver::PrivateActiveWindowObserver(QObject *obj)
     else if (GNOME::running()) {
         std::cout << "Detected GNOME" << std::endl;
         m_backend = std::make_unique<GNOMEWindowObserverBackend>();
+    }
+    else if (Cinnamon::running() && !ExtensionFile::flatpak()) {
+        // The Flatpak sandbox cannot write Cinnamon's extension directory.
+        std::cout << "Detected Cinnamon" << std::endl;
+        m_backend = std::make_unique<CinnamonWindowObserverBackend>();
     }
     else {
         std::cout << "Could not find a supported desktop environment, " <<

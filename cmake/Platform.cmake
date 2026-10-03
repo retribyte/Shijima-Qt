@@ -32,6 +32,7 @@ if(platform STREQUAL "Linux")
     target_sources(shijima-qt PRIVATE
         Platform/Linux/KWin.cc Platform/Linux/DBus.cc Platform/Linux/GNOME.cc
         Platform/Linux/GNOMEWindowObserverBackend.cc Platform/Linux/KDEWindowObserverBackend.cc
+        Platform/Linux/Cinnamon.cc Platform/Linux/CinnamonWindowObserverBackend.cc
         Platform/Linux/ExtensionFile.cc
     )
     shijima_generate_resource("${SHIJIMA_GENERATED_DIR}/kwin_script.c" embed
@@ -39,11 +40,17 @@ if(platform STREQUAL "Linux")
     shijima_generate_resource("${SHIJIMA_GENERATED_DIR}/gnome_script.c" gnome
         "${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/gnome_script/extension.js"
         "${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/gnome_script/metadata.json")
+    shijima_generate_resource("${SHIJIMA_GENERATED_DIR}/cinnamon_extension.c" embed
+        "${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/cinnamon_script/extension.js")
+    shijima_generate_resource("${SHIJIMA_GENERATED_DIR}/cinnamon_metadata.c" embed
+        "${CMAKE_CURRENT_SOURCE_DIR}/Platform/Linux/cinnamon_script/metadata.json")
     # These are included by C++ sources, not compiled as independent C files.
     set_source_files_properties("${SHIJIMA_GENERATED_DIR}/kwin_script.c"
-        "${SHIJIMA_GENERATED_DIR}/gnome_script.c" PROPERTIES HEADER_FILE_ONLY TRUE)
+        "${SHIJIMA_GENERATED_DIR}/gnome_script.c" "${SHIJIMA_GENERATED_DIR}/cinnamon_extension.c"
+        "${SHIJIMA_GENERATED_DIR}/cinnamon_metadata.c" PROPERTIES HEADER_FILE_ONLY TRUE)
     target_sources(shijima-qt PRIVATE "${SHIJIMA_GENERATED_DIR}/kwin_script.c"
-        "${SHIJIMA_GENERATED_DIR}/gnome_script.c")
+        "${SHIJIMA_GENERATED_DIR}/gnome_script.c" "${SHIJIMA_GENERATED_DIR}/cinnamon_extension.c"
+        "${SHIJIMA_GENERATED_DIR}/cinnamon_metadata.c")
 endif()
 
 if(WIN32)

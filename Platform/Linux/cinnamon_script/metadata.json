@@ -1,0 +1,8 @@
+{
+    "uuid": "shijima-helper@pixelomer.github.io",
+    "version": "0.1.0",
+    "name": "Shijima Cinnamon Helper",
+    "description": "Tells Shijima-Qt where the active window is. Managed by Shijima-Qt.",
+    "cinnamon-version": [ "5.4" ],
+    "url": "https://github.com/pixelomer/Shijima-Qt"
+}

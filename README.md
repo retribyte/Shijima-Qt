@@ -138,9 +138,10 @@ Shijima-Qt needs the Accessibility permission to access the frontmost window.
 
 ### Linux
 
-Shijima-Qt supports KDE Plasma 6 and GNOME 46 in both Wayland and X11. To get the frontmost window, Shijima-Qt automatically installs and enables a shell plugin when started.  
+Shijima-Qt supports KDE Plasma 6 and GNOME 46 in both Wayland and X11, and Cinnamon (X11). To get the frontmost window, Shijima-Qt automatically installs and enables a shell plugin when started.  
 - On KDE, this is transparent to the user.
 - On GNOME, the shell needs to be restarted on the first run. This can be done by logging out and logging back in. Shijima-Qt will exit with an appropriate error message if this is required.
+- On Cinnamon, the helper is installed in `~/.local/share/cinnamon/extensions/` and is added to `org.cinnamon enabled-extensions` while Shijima-Qt runs. Cinnamon loads it immediately, so no restart is needed. This does not work in the Flatpak, because the sandbox cannot write to that directory.
 - On other desktop environments, window tracking will not be available.
 
 ### Windows
