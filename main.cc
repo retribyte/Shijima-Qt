@@ -18,6 +18,7 @@
 
 #include <string>
 #include <QApplication>
+#include <QtGlobal>
 #include <QDir>
 #include <QStandardPaths>
 #include "Widgets/MessageBox.h"
@@ -42,6 +43,15 @@ int main(int argc, char **argv) {
     if (argc > 1) {
         return shijimaRunCli(argc, argv);
     }
+    #if defined(__linux__)
+    // With Qt's HiDPI scaling on, a second monitor is reported at its native x offset but at its *logical* size
+    // (e.g. 1920x1080 at x=3840 at 200%), leaving a hole in the virtual desktop. Mascots standing in the hole
+    // flicker between displays. Working in native pixels gives one continuous desktop; ShijimaManager
+    // compensates the mascot scale with the DPI factor. Set QT_ENABLE_HIGHDPI_SCALING=1 to opt out.
+    if (!qEnvironmentVariableIsSet("QT_ENABLE_HIGHDPI_SCALING")) {
+        qputenv("QT_ENABLE_HIGHDPI_SCALING", "0");
+    }
+    #endif
     Platform::initialize(argc, argv);
     #ifdef SHIJIMA_LOGGING_ENABLED
         shijima::set_log_level(SHIJIMA_LOG_PARSER | SHIJIMA_LOG_WARNINGS);

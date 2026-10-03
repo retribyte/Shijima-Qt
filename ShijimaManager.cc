@@ -34,6 +34,7 @@
 #include <QFile>
 #include <QDesktopServices>
 #include <QScreen>
+#include <algorithm>
 #include <QRandomGenerator>
 #include "PlatformWidget.hpp"
 #include "ShijimaLicensesDialog.hpp"
@@ -307,6 +308,9 @@ void ShijimaManager::buildToolbar() {
         connect(action, &QAction::triggered, this, &ShijimaManager::deleteAction);
     }
 
+    if (auto primary = QGuiApplication::primaryScreen()) {
+        m_dpiFactor = std::clamp(primary->logicalDotsPerInch() / 96.0, 1.0, 4.0);
+    }
     menu = menuBar()->addMenu("Settings");
     {
         {
@@ -995,7 +999,7 @@ void ShijimaManager::updateEnvironment(QScreen *screen) {
     env->subtick_count = SHIJIMAQT_SUBTICK_COUNT;
     m_previousWindow = m_currentWindow;
 
-    env->set_scale(1.0 / std::sqrt(m_userScale));
+    env->set_scale(1.0 / (std::sqrt(m_userScale) * m_dpiFactor));
 }
 
 void ShijimaManager::updateEnvironment() {

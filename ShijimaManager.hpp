@@ -137,6 +137,8 @@ private:
     bool m_spanDisplays = true;
     int m_idCounter;
     double m_userScale = 1.0;
+    // Physical pixels per logical pixel when Qt's HiDPI scaling is off (Xft.dpi / 96); 1 otherwise
+    double m_dpiFactor = 1.0;
     int m_windowObserverTimer = -1;
     QMap<QString, MascotData *> m_loadedMascots;
     QMap<int, MascotData *> m_loadedMascotsById;
